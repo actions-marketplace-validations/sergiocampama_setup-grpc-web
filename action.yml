@@ -1,6 +1,6 @@
-name: 'Setup protoc'
-description: 'Download protoc compiler and add it to the PATH'
-author: 'Arduino'
+name: 'Setup gRPC Web'
+description: 'Download protoc and plugins compiler and add it to the PATH'
+author: 'sergiocampama'
 inputs:
   version:
     description: 'Version to use. Example: 23.2'
