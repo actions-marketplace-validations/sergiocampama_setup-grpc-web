@@ -135,7 +135,7 @@ export async function getProtocGenGRPCJS(
   }
 
   // add the parent directory folder to the PATH
-  core.addPath(path.dirname(toolPath));
+  core.addPath(toolPath);
 }
 
 async function downloadRelease(version: string, formatURL: string, toolName: string, extension = ".zip"): Promise<string> {
@@ -168,10 +168,8 @@ async function downloadRelease(version: string, formatURL: string, toolName: str
     // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
     return tc.cacheDir(extPath, toolName, version);
   } else {
-    const toolPath = path.join(path.dirname(downloadPath), toolName);
-    fs.renameSync(downloadPath, toolPath);
-    fs.chmodSync(toolPath, 0o775);
-    return tc.cacheDir(toolPath, toolName, version)
+    fs.chmodSync(downloadPath, 0o775);
+    return tc.cacheFile(downloadPath, toolName, toolName, version)
   }
 }
 

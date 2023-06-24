@@ -135,7 +135,7 @@ function getProtocGenGRPCJS(version, includePreReleases, repoToken) {
             process.stdout.write("protoc-gen-grpc-web cached under " + toolPath + os.EOL);
         }
         // add the parent directory folder to the PATH
-        core.addPath(path.dirname(toolPath));
+        core.addPath(toolPath);
     });
 }
 exports.getProtocGenGRPCJS = getProtocGenGRPCJS;
@@ -163,10 +163,8 @@ function downloadRelease(version, formatURL, toolName, extension = ".zip") {
             return tc.cacheDir(extPath, toolName, version);
         }
         else {
-            const toolPath = path.join(path.dirname(downloadPath), toolName);
-            fs_1.default.renameSync(downloadPath, toolPath);
-            fs_1.default.chmodSync(toolPath, 0o775);
-            return tc.cacheDir(toolPath, toolName, version);
+            fs_1.default.chmodSync(downloadPath, 0o775);
+            return tc.cacheFile(downloadPath, toolName, toolName, version);
         }
     });
 }
