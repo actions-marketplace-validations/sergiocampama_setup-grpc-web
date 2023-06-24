@@ -270,7 +270,7 @@ async function fetchVersions(
   }
 
   return tags
-    .filter((tag) => tag.tag_name.match(/v?\d+\.\d+\(.[\w.]+)?/g))
+    .filter((tag) => tag.tag_name.match(/v?\d+\.\d+(\.[\w.]+)?/g))
     .filter((tag) => includePrerelease(tag.prerelease, includePreReleases))
     .map((tag) => tag.tag_name.replace("v", ""));
 }

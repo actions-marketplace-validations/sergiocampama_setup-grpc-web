@@ -72,11 +72,12 @@ const tc = __importStar(__nccwpck_require__(7784));
 const osPlat = os.platform();
 const osArch = os.arch();
 // This regex is slighty modified from https://semver.org/ to allow only MINOR.PATCH notation.
-const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/gm;
+const semverRegex2 = /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/gm;
+const semverRegex3 = /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/gm;
 function getProtoc(version, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // resolve the version number
-        const targetVersion = yield computeVersion("https://api.github.com/repos/protocolbuffers/protobuf/releases?page=", version, includePreReleases, repoToken);
+        const targetVersion = yield computeVersion("https://api.github.com/repos/protocolbuffers/protobuf/releases?page=", version, includePreReleases, repoToken, semverRegex2);
         if (targetVersion) {
             version = targetVersion;
         }
@@ -97,7 +98,7 @@ exports.getProtoc = getProtoc;
 function getProtocGenJS(version, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // resolve the version number
-        const targetVersion = yield computeVersion("https://api.github.com/repos/protocolbuffers/protobuf-javascript/releases?page=", version, includePreReleases, repoToken);
+        const targetVersion = yield computeVersion("https://api.github.com/repos/protocolbuffers/protobuf-javascript/releases?page=", version, includePreReleases, repoToken, semverRegex3);
         if (targetVersion) {
             version = targetVersion;
         }
@@ -118,7 +119,7 @@ exports.getProtocGenJS = getProtocGenJS;
 function getProtocGenGRPCJS(version, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // resolve the version number
-        const targetVersion = yield computeVersion("https://api.github.com/repos/grpc/grpc-web/releases?page=", version, includePreReleases, repoToken);
+        const targetVersion = yield computeVersion("https://api.github.com/repos/grpc/grpc-web/releases?page=", version, includePreReleases, repoToken, semverRegex3);
         if (targetVersion) {
             version = targetVersion;
         }
@@ -248,13 +249,13 @@ function fetchVersions(url, includePreReleases, repoToken) {
             }
         }
         return tags
-            .filter((tag) => tag.tag_name.match(/v\d+\.[\w.]+/g))
+            .filter((tag) => tag.tag_name.match(/v?\d+\.\d+(\.[\w.]+)?/g))
             .filter((tag) => includePrerelease(tag.prerelease, includePreReleases))
             .map((tag) => tag.tag_name.replace("v", ""));
     });
 }
 // Compute an actual version starting from the `version` configuration param.
-function computeVersion(url, version, includePreReleases, repoToken) {
+function computeVersion(url, version, includePreReleases, repoToken, semverRegex) {
     return __awaiter(this, void 0, void 0, function* () {
         // strip leading `v` char (will be re-added later)
         if (version.startsWith("v")) {
@@ -264,9 +265,13 @@ function computeVersion(url, version, includePreReleases, repoToken) {
         if (version.endsWith(".x")) {
             version = version.slice(0, version.length - 2);
         }
+        core.debug(`finding version ${version}`);
         const allVersions = yield fetchVersions(url, includePreReleases, repoToken);
         const validVersions = allVersions.filter((v) => v.match(semverRegex));
         const possibleVersions = validVersions.filter((v) => v.startsWith(version));
+        core.debug(`${allVersions}`);
+        core.debug(`${validVersions}`);
+        core.debug(`${possibleVersions}`);
         const versionMap = new Map();
         possibleVersions.forEach((v) => versionMap.set(normalizeVersion(v), v));
         const versions = Array.from(versionMap.keys())
