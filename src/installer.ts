@@ -30,7 +30,9 @@ const osPlat: string = os.platform();
 const osArch: string = os.arch();
 
 // This regex is slighty modified from https://semver.org/ to allow only MINOR.PATCH notation.
-const semverRegex =
+const semverRegex2 =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/gm;
+const semverRegex3 =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/gm;
 
 interface IProtocRelease {
@@ -48,7 +50,8 @@ export async function getProtoc(
     "https://api.github.com/repos/protocolbuffers/protobuf/releases?page=",
     version,
     includePreReleases,
-    repoToken
+    repoToken,
+    semverRegex2
   );
   if (targetVersion) {
     version = targetVersion;
@@ -79,7 +82,8 @@ export async function getProtocGenJS(
     "https://api.github.com/repos/protocolbuffers/protobuf-javascript/releases?page=",
     version,
     includePreReleases,
-    repoToken
+    repoToken,
+    semverRegex3
   );
   if (targetVersion) {
     version = targetVersion;
@@ -110,7 +114,8 @@ export async function getProtocGenGRPCJS(
     "https://api.github.com/repos/grpc/grpc-web/releases?page=",
     version,
     includePreReleases,
-    repoToken
+    repoToken,
+    semverRegex3
   );
   if (targetVersion) {
     version = targetVersion;
@@ -265,7 +270,7 @@ async function fetchVersions(
   }
 
   return tags
-    .filter((tag) => tag.tag_name.match(/v\d+\.[\w.]+/g))
+    .filter((tag) => tag.tag_name.match(/v?\d+\.\d+\(.[\w.]+)?/g))
     .filter((tag) => includePrerelease(tag.prerelease, includePreReleases))
     .map((tag) => tag.tag_name.replace("v", ""));
 }
@@ -275,7 +280,8 @@ async function computeVersion(
   url: string,
   version: string,
   includePreReleases: boolean,
-  repoToken: string
+  repoToken: string,
+  semverRegex: RegExp
 ): Promise<string> {
   // strip leading `v` char (will be re-added later)
   if (version.startsWith("v")) {
