@@ -104,14 +104,14 @@ function getProtocGenJS(version, includePreReleases, repoToken) {
         if (targetVersion) {
             version = targetVersion;
         }
-        process.stdout.write("Getting protoc-gen-js version: " + version + os.EOL);
+        process.stdout.write("Getting protobuf-javascript version: " + version + os.EOL);
         // look if the binary is cached
         let toolPath;
-        toolPath = tc.find("protoc-gen-js", version);
+        toolPath = tc.find("protobuf-javascript", version);
         // if not: download, extract and cache
         if (!toolPath) {
-            toolPath = yield downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-js");
-            process.stdout.write("protoc-gen-js cached under " + toolPath + os.EOL);
+            toolPath = yield downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protobuf-javascript");
+            process.stdout.write("protobuf-javascript cached under " + toolPath + os.EOL);
         }
         // add the bin folder to the PATH
         core.addPath(path.join(toolPath, "bin"));
@@ -121,7 +121,7 @@ exports.getProtocGenJS = getProtocGenJS;
 function getProtocGenGRPCJS(version, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // resolve the version number
-        const targetVersion = yield computeVersion("https://api.github.com/repos/grpc/grpc-web/releases?page=", version, includePreReleases, repoToken, semverRegex3);
+        const targetVersion = yield computeVersion("https://api.github.com/repos/grpc/grpc-web/releases?page=", version, includePreReleases, repoToken, semverRegex3, false);
         if (targetVersion) {
             version = targetVersion;
         }
@@ -131,7 +131,7 @@ function getProtocGenGRPCJS(version, includePreReleases, repoToken) {
         toolPath = tc.find("protoc-gen-grpc-web", version);
         // if not: download, extract and cache
         if (!toolPath) {
-            toolPath = yield downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-grpc-web", "");
+            toolPath = yield downloadRelease(version, "https://github.com/grpc/grpc-web/releases/download/%s/%s", "protoc-gen-grpc-web", "");
             process.stdout.write("protoc-gen-grpc-web cached under " + toolPath + os.EOL);
         }
         // add the parent directory folder to the PATH
@@ -257,7 +257,7 @@ function fetchVersions(url, includePreReleases, repoToken) {
     });
 }
 // Compute an actual version starting from the `version` configuration param.
-function computeVersion(url, version, includePreReleases, repoToken, semverRegex) {
+function computeVersion(url, version, includePreReleases, repoToken, semverRegex, includesV = true) {
     return __awaiter(this, void 0, void 0, function* () {
         // strip leading `v` char (will be re-added later)
         if (version.startsWith("v")) {
@@ -284,7 +284,7 @@ function computeVersion(url, version, includePreReleases, repoToken, semverRegex
             throw new Error("unable to get latest version");
         }
         core.debug(`matched: ${versions[0]}`);
-        return "v" + versions[0];
+        return (includesV ? "v" : "") + versions[0];
     });
 }
 // Make partial versions semver compliant.

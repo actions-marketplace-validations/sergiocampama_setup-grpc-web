@@ -89,16 +89,16 @@ export async function getProtocGenJS(
   if (targetVersion) {
     version = targetVersion;
   }
-  process.stdout.write("Getting protoc-gen-js version: " + version + os.EOL);
+  process.stdout.write("Getting protobuf-javascript version: " + version + os.EOL);
 
   // look if the binary is cached
   let toolPath: string;
-  toolPath = tc.find("protoc-gen-js", version);
+  toolPath = tc.find("protobuf-javascript", version);
 
   // if not: download, extract and cache
   if (!toolPath) {
-    toolPath = await downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-js");
-    process.stdout.write("protoc-gen-js cached under " + toolPath + os.EOL);
+    toolPath = await downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protobuf-javascript");
+    process.stdout.write("protobuf-javascript cached under " + toolPath + os.EOL);
   }
 
   // add the bin folder to the PATH
@@ -116,7 +116,8 @@ export async function getProtocGenGRPCJS(
     version,
     includePreReleases,
     repoToken,
-    semverRegex3
+    semverRegex3,
+    false
   );
   if (targetVersion) {
     version = targetVersion;
@@ -129,7 +130,7 @@ export async function getProtocGenGRPCJS(
 
   // if not: download, extract and cache
   if (!toolPath) {
-    toolPath = await downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-grpc-web", "");
+    toolPath = await downloadRelease(version, "https://github.com/grpc/grpc-web/releases/download/%s/%s", "protoc-gen-grpc-web", "");
     process.stdout.write("protoc-gen-grpc-web cached under " + toolPath + os.EOL);
   }
 
@@ -282,7 +283,8 @@ async function computeVersion(
   version: string,
   includePreReleases: boolean,
   repoToken: string,
-  semverRegex: RegExp
+  semverRegex: RegExp,
+  includesV = true
 ): Promise<string> {
   // strip leading `v` char (will be re-added later)
   if (version.startsWith("v")) {
@@ -319,7 +321,7 @@ async function computeVersion(
 
   core.debug(`matched: ${versions[0]}`);
 
-  return "v" + versions[0];
+  return (includesV ? "v" : "") + versions[0];
 }
 
 // Make partial versions semver compliant.
