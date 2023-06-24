@@ -1,6 +1,7 @@
 // Load tempDirectory before it gets wiped by tool-cache
 let tempDirectory = process.env.RUNNER_TEMP || "";
 
+import fs from 'fs';
 import * as os from "os";
 import * as path from "path";
 import * as util from "util";
@@ -44,6 +45,7 @@ export async function getProtoc(
 ) {
   // resolve the version number
   const targetVersion = await computeVersion(
+    "https://api.github.com/repos/protocolbuffers/protobuf/releases?page=",
     version,
     includePreReleases,
     repoToken
@@ -59,7 +61,7 @@ export async function getProtoc(
 
   // if not: download, extract and cache
   if (!toolPath) {
-    toolPath = await downloadRelease(version);
+    toolPath = await downloadRelease(version, "https://github.com/protocolbuffers/protobuf/releases/download/%s/%s", "protoc");
     process.stdout.write("Protoc cached under " + toolPath + os.EOL);
   }
 
@@ -67,11 +69,73 @@ export async function getProtoc(
   core.addPath(path.join(toolPath, "bin"));
 }
 
-async function downloadRelease(version: string): Promise<string> {
+export async function getProtocGenJS(
+  version: string,
+  includePreReleases: boolean,
+  repoToken: string
+) {
+  // resolve the version number
+  const targetVersion = await computeVersion(
+    "https://api.github.com/repos/protocolbuffers/protobuf-javascript/releases?page=",
+    version,
+    includePreReleases,
+    repoToken
+  );
+  if (targetVersion) {
+    version = targetVersion;
+  }
+  process.stdout.write("Getting protoc-gen-js version: " + version + os.EOL);
+
+  // look if the binary is cached
+  let toolPath: string;
+  toolPath = tc.find("protoc-gen-js", version);
+
+  // if not: download, extract and cache
+  if (!toolPath) {
+    toolPath = await downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-js");
+    process.stdout.write("protoc-gen-js cached under " + toolPath + os.EOL);
+  }
+
+  // add the bin folder to the PATH
+  core.addPath(path.join(toolPath, "bin"));
+}
+
+export async function getProtocGenGRPCJS(
+  version: string,
+  includePreReleases: boolean,
+  repoToken: string
+) {
+  // resolve the version number
+  const targetVersion = await computeVersion(
+    "https://api.github.com/repos/grpc/grpc-web/releases?page=",
+    version,
+    includePreReleases,
+    repoToken
+  );
+  if (targetVersion) {
+    version = targetVersion;
+  }
+  process.stdout.write("Getting protoc+-gen-grpc-web version: " + version + os.EOL);
+
+  // look if the binary is cached
+  let toolPath: string;
+  toolPath = tc.find("protoc-gen-grpc-web", version);
+
+  // if not: download, extract and cache
+  if (!toolPath) {
+    toolPath = await downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-grpc-web", "");
+    process.stdout.write("protoc-gen-grpc-web cached under " + toolPath + os.EOL);
+  }
+
+  // add the parent directory folder to the PATH
+  core.addPath(path.dirname(toolPath));
+}
+
+async function downloadRelease(version: string, formatURL: string, toolName: string, extension = ".zip"): Promise<string> {
   // Download
-  const fileName: string = getFileName(version, osPlat, osArch);
+  const fileName: string = getFileName(toolName, version, osPlat, osArch, extension);
   const downloadUrl: string = util.format(
-    "https://github.com/protocolbuffers/protobuf/releases/download/%s/%s",
+    formatURL,
     version,
     fileName
   );
@@ -90,11 +154,18 @@ async function downloadRelease(version: string): Promise<string> {
     throw new Error(`Failed to download version ${version}: ${err}`);
   }
 
-  // Extract
-  const extPath: string = await tc.extractZip(downloadPath);
+  if (extension === ".zip") {
+    // Extract
+    const extPath: string = await tc.extractZip(downloadPath);
 
-  // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-  return tc.cacheDir(extPath, "protoc", version);
+    // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
+    return tc.cacheDir(extPath, toolName, version);
+  } else {
+    const toolPath = path.join(path.dirname(downloadPath), toolName);
+    fs.renameSync(downloadPath, toolPath);
+    fs.chmodSync(toolPath, 0o775);
+    return tc.cacheDir(toolPath, toolName, version)
+  }
 }
 
 /**
@@ -135,9 +206,11 @@ function fileNameSuffix(osArc: string): string {
  *
  */
 export function getFileName(
+  toolName: string,
   version: string,
   osPlatf: string,
-  osArc: string
+  osArc: string,
+  extension = ".zip"
 ): string {
   // to compose the file name, strip the leading `v` char
   if (version.startsWith("v")) {
@@ -151,37 +224,37 @@ export function getFileName(
   // The name of the Windows package has a different naming pattern
   if (osPlatf == "win32") {
     const arch: string = osArc == "x64" ? "64" : "32";
-    return util.format("protoc-%s-win%s.zip", version, arch);
+    return util.format("%s-%s-win%s%s", toolName, version, arch, extension);
   }
 
   const suffix = fileNameSuffix(osArc);
 
   if (osPlatf == "darwin") {
-    return util.format("protoc-%s-osx-%s.zip", version, suffix);
+    return util.format("%s-%s-osx-%s%s", toolName, version, suffix, extension);
   }
 
-  return util.format("protoc-%s-linux-%s.zip", version, suffix);
+  return util.format("%s-%s-linux-%s%s", toolName, version, suffix, extension);
 }
 
 // Retrieve a list of versions scraping tags from the Github API
 async function fetchVersions(
+  url: string,
   includePreReleases: boolean,
   repoToken: string
 ): Promise<string[]> {
   let rest: restm.RestClient;
   if (repoToken != "") {
-    rest = new restm.RestClient("setup-protoc", "", [], {
+    rest = new restm.RestClient("setup-grpc-web", "", [], {
       headers: { Authorization: "Bearer " + repoToken },
     });
   } else {
-    rest = new restm.RestClient("setup-protoc");
+    rest = new restm.RestClient("setup-grpc-web");
   }
 
   let tags: IProtocRelease[] = [];
   for (let pageNum = 1, morePages = true; morePages; pageNum++) {
     const p = await rest.get<IProtocRelease[]>(
-      "https://api.github.com/repos/protocolbuffers/protobuf/releases?page=" +
-        pageNum
+      url + pageNum
     );
     const nextPage: IProtocRelease[] = p.result || [];
     if (nextPage.length > 0) {
@@ -199,6 +272,7 @@ async function fetchVersions(
 
 // Compute an actual version starting from the `version` configuration param.
 async function computeVersion(
+  url: string,
   version: string,
   includePreReleases: boolean,
   repoToken: string
@@ -213,7 +287,7 @@ async function computeVersion(
     version = version.slice(0, version.length - 2);
   }
 
-  const allVersions = await fetchVersions(includePreReleases, repoToken);
+  const allVersions = await fetchVersions(url, includePreReleases, repoToken);
   const validVersions = allVersions.filter((v) => v.match(semverRegex));
   const possibleVersions = validVersions.filter((v) => v.startsWith(version));
 

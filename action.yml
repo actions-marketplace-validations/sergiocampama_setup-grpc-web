@@ -5,6 +5,12 @@ inputs:
   version:
     description: 'Version to use. Example: 23.2'
     default: '23.x'
+  version-js:
+    description: 'Version to use. Example: 23.2'
+    default: '3.x'
+  version-grpc-js:
+    description: 'Version to use. Example: 23.2'
+    default: '3.x'
   include-pre-releases:
     description: 'Include github pre-releases in latest version calculation'
     default: 'false'

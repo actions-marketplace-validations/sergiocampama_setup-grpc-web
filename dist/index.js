@@ -38,10 +38,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getFileName = exports.getProtoc = void 0;
+exports.getFileName = exports.getProtocGenGRPCJS = exports.getProtocGenJS = exports.getProtoc = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
 let tempDirectory = process.env.RUNNER_TEMP || "";
+const fs_1 = __importDefault(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
 const util = __importStar(__nccwpck_require__(3837));
@@ -72,7 +76,7 @@ const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][
 function getProtoc(version, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // resolve the version number
-        const targetVersion = yield computeVersion(version, includePreReleases, repoToken);
+        const targetVersion = yield computeVersion("https://api.github.com/repos/protocolbuffers/protobuf/releases?page=", version, includePreReleases, repoToken);
         if (targetVersion) {
             version = targetVersion;
         }
@@ -82,7 +86,7 @@ function getProtoc(version, includePreReleases, repoToken) {
         toolPath = tc.find("protoc", version);
         // if not: download, extract and cache
         if (!toolPath) {
-            toolPath = yield downloadRelease(version);
+            toolPath = yield downloadRelease(version, "https://github.com/protocolbuffers/protobuf/releases/download/%s/%s", "protoc");
             process.stdout.write("Protoc cached under " + toolPath + os.EOL);
         }
         // add the bin folder to the PATH
@@ -90,11 +94,53 @@ function getProtoc(version, includePreReleases, repoToken) {
     });
 }
 exports.getProtoc = getProtoc;
-function downloadRelease(version) {
+function getProtocGenJS(version, includePreReleases, repoToken) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // resolve the version number
+        const targetVersion = yield computeVersion("https://api.github.com/repos/protocolbuffers/protobuf-javascript/releases?page=", version, includePreReleases, repoToken);
+        if (targetVersion) {
+            version = targetVersion;
+        }
+        process.stdout.write("Getting protoc-gen-js version: " + version + os.EOL);
+        // look if the binary is cached
+        let toolPath;
+        toolPath = tc.find("protoc-gen-js", version);
+        // if not: download, extract and cache
+        if (!toolPath) {
+            toolPath = yield downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-js");
+            process.stdout.write("protoc-gen-js cached under " + toolPath + os.EOL);
+        }
+        // add the bin folder to the PATH
+        core.addPath(path.join(toolPath, "bin"));
+    });
+}
+exports.getProtocGenJS = getProtocGenJS;
+function getProtocGenGRPCJS(version, includePreReleases, repoToken) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // resolve the version number
+        const targetVersion = yield computeVersion("https://api.github.com/repos/grpc/grpc-web/releases?page=", version, includePreReleases, repoToken);
+        if (targetVersion) {
+            version = targetVersion;
+        }
+        process.stdout.write("Getting protoc+-gen-grpc-web version: " + version + os.EOL);
+        // look if the binary is cached
+        let toolPath;
+        toolPath = tc.find("protoc-gen-grpc-web", version);
+        // if not: download, extract and cache
+        if (!toolPath) {
+            toolPath = yield downloadRelease(version, "https://github.com/protocolbuffers/protobuf-javascript/releases/download/%s/%s", "protoc-gen-grpc-web", "");
+            process.stdout.write("protoc-gen-grpc-web cached under " + toolPath + os.EOL);
+        }
+        // add the parent directory folder to the PATH
+        core.addPath(path.dirname(toolPath));
+    });
+}
+exports.getProtocGenGRPCJS = getProtocGenGRPCJS;
+function downloadRelease(version, formatURL, toolName, extension = ".zip") {
     return __awaiter(this, void 0, void 0, function* () {
         // Download
-        const fileName = getFileName(version, osPlat, osArch);
-        const downloadUrl = util.format("https://github.com/protocolbuffers/protobuf/releases/download/%s/%s", version, fileName);
+        const fileName = getFileName(toolName, version, osPlat, osArch, extension);
+        const downloadUrl = util.format(formatURL, version, fileName);
         process.stdout.write("Downloading archive: " + downloadUrl + os.EOL);
         let downloadPath = null;
         try {
@@ -107,10 +153,18 @@ function downloadRelease(version) {
             }
             throw new Error(`Failed to download version ${version}: ${err}`);
         }
-        // Extract
-        const extPath = yield tc.extractZip(downloadPath);
-        // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-        return tc.cacheDir(extPath, "protoc", version);
+        if (extension === ".zip") {
+            // Extract
+            const extPath = yield tc.extractZip(downloadPath);
+            // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
+            return tc.cacheDir(extPath, toolName, version);
+        }
+        else {
+            const toolPath = path.join(path.dirname(downloadPath), toolName);
+            fs_1.default.renameSync(downloadPath, toolPath);
+            fs_1.default.chmodSync(toolPath, 0o775);
+            return tc.cacheDir(toolPath, toolName, version);
+        }
     });
 }
 /**
@@ -149,7 +203,7 @@ function fileNameSuffix(osArc) {
  * @returns The filename of the protocol buffer for the given release, platform and architecture.
  *
  */
-function getFileName(version, osPlatf, osArc) {
+function getFileName(toolName, version, osPlatf, osArc, extension = ".zip") {
     // to compose the file name, strip the leading `v` char
     if (version.startsWith("v")) {
         version = version.slice(1, version.length);
@@ -161,31 +215,30 @@ function getFileName(version, osPlatf, osArc) {
     // The name of the Windows package has a different naming pattern
     if (osPlatf == "win32") {
         const arch = osArc == "x64" ? "64" : "32";
-        return util.format("protoc-%s-win%s.zip", version, arch);
+        return util.format("%s-%s-win%s%s", toolName, version, arch, extension);
     }
     const suffix = fileNameSuffix(osArc);
     if (osPlatf == "darwin") {
-        return util.format("protoc-%s-osx-%s.zip", version, suffix);
+        return util.format("%s-%s-osx-%s%s", toolName, version, suffix, extension);
     }
-    return util.format("protoc-%s-linux-%s.zip", version, suffix);
+    return util.format("%s-%s-linux-%s%s", toolName, version, suffix, extension);
 }
 exports.getFileName = getFileName;
 // Retrieve a list of versions scraping tags from the Github API
-function fetchVersions(includePreReleases, repoToken) {
+function fetchVersions(url, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         let rest;
         if (repoToken != "") {
-            rest = new restm.RestClient("setup-protoc", "", [], {
+            rest = new restm.RestClient("setup-grpc-web", "", [], {
                 headers: { Authorization: "Bearer " + repoToken },
             });
         }
         else {
-            rest = new restm.RestClient("setup-protoc");
+            rest = new restm.RestClient("setup-grpc-web");
         }
         let tags = [];
         for (let pageNum = 1, morePages = true; morePages; pageNum++) {
-            const p = yield rest.get("https://api.github.com/repos/protocolbuffers/protobuf/releases?page=" +
-                pageNum);
+            const p = yield rest.get(url + pageNum);
             const nextPage = p.result || [];
             if (nextPage.length > 0) {
                 tags = tags.concat(nextPage);
@@ -201,7 +254,7 @@ function fetchVersions(includePreReleases, repoToken) {
     });
 }
 // Compute an actual version starting from the `version` configuration param.
-function computeVersion(version, includePreReleases, repoToken) {
+function computeVersion(url, version, includePreReleases, repoToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // strip leading `v` char (will be re-added later)
         if (version.startsWith("v")) {
@@ -211,7 +264,7 @@ function computeVersion(version, includePreReleases, repoToken) {
         if (version.endsWith(".x")) {
             version = version.slice(0, version.length - 2);
         }
-        const allVersions = yield fetchVersions(includePreReleases, repoToken);
+        const allVersions = yield fetchVersions(url, includePreReleases, repoToken);
         const validVersions = allVersions.filter((v) => v.match(semverRegex));
         const possibleVersions = validVersions.filter((v) => v.startsWith(version));
         const versionMap = new Map();
@@ -303,9 +356,13 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const version = core.getInput("version");
+            const versionJS = core.getInput("version-js");
+            const versionGRPCJS = core.getInput("version-grpc-js");
             const includePreReleases = convertToBoolean(core.getInput("include-pre-releases"));
             const repoToken = core.getInput("repo-token");
             yield installer.getProtoc(version, includePreReleases, repoToken);
+            yield installer.getProtocGenJS(versionJS, includePreReleases, repoToken);
+            yield installer.getProtocGenGRPCJS(versionGRPCJS, includePreReleases, repoToken);
         }
         catch (error) {
             core.setFailed(`${error}`);

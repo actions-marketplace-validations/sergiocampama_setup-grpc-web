@@ -1,18 +1,21 @@
-# setup-protoc
+# setup-grpc-web
 
-[![Check npm Dependencies status](https://github.com/arduino/setup-protoc/actions/workflows/check-npm-dependencies-task.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-npm-dependencies-task.yml)
-![test](https://github.com/arduino/setup-protoc/workflows/test/badge.svg)
-[![Sync Labels status](https://github.com/arduino/setup-protoc/actions/workflows/sync-labels-npm.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/sync-labels-npm.yml)
-[![Check Markdown status](https://github.com/arduino/setup-protoc/actions/workflows/check-markdown-task.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-markdown-task.yml)
-[![Check License status](https://github.com/arduino/setup-protoc/actions/workflows/check-license.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-license.yml)
-[![Check Taskfiles status](https://github.com/arduino/setup-protoc/actions/workflows/check-taskfiles.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-taskfiles.yml)
-[![Integration Tests status](https://github.com/arduino/setup-protoc/actions/workflows/test-integration.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/test-integration.yml)
-[![Check npm status](https://github.com/arduino/setup-protoc/actions/workflows/check-npm-task.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-npm-task.yml)
-[![Check TypeScript status](https://github.com/arduino/setup-protoc/actions/workflows/check-typescript-task.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-typescript-task.yml)
-[![Check tsconfig status](https://github.com/arduino/setup-protoc/actions/workflows/check-tsconfig-task.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-tsconfig-task.yml)
-[![Check Packaging status](https://github.com/arduino/setup-protoc/actions/workflows/check-packaging-ncc-typescript-task.yml/badge.svg)](https://github.com/arduino/setup-protoc/actions/workflows/check-packaging-ncc-typescript-task.yml)
+[![Check npm Dependencies status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-npm-dependencies-task.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-npm-dependencies-task.yml)
+![test](https://github.com/sergiocampama/setup-grpc-web/workflows/test/badge.svg)
+[![Sync Labels status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/sync-labels-npm.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/sync-labels-npm.yml)
+[![Check Markdown status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-markdown-task.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-markdown-task.yml)
+[![Check License status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-license.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-license.yml)
+[![Check Taskfiles status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-taskfiles.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-taskfiles.yml)
+[![Integration Tests status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/test-integration.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/test-integration.yml)
+[![Check npm status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-npm-task.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-npm-task.yml)
+[![Check TypeScript status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-typescript-task.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-typescript-task.yml)
+[![Check tsconfig status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-tsconfig-task.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-tsconfig-task.yml)
+[![Check Packaging status](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-packaging-ncc-typescript-task.yml/badge.svg)](https://github.com/sergiocampama/setup-grpc-web/actions/workflows/check-packaging-ncc-typescript-task.yml)
 
-This action makes the `protoc` compiler available to Workflows.
+This is a copy of [arduino/setup-protoc](https://github.com/sergiocampama/setup-grpc-web) which had more than half the work done, and I needed this for a personal project.
+
+This action makes the `protoc` compiler available to Workflows, along with the JS plugins for protocol buffers and gRPC.
+
 
 ## Upgrade to v2
 
@@ -24,14 +27,14 @@ To get the latest stable version of `protoc` just add this step:
 
 ```yaml
 - name: Install Protoc
-  uses: arduino/setup-protoc@v2
+  uses: sergiocampama/setup-grpc-web@v1
 ```
 
 If you want to pin a major or minor version you can use the `.x` wildcard:
 
 ```yaml
 - name: Install Protoc
-  uses: arduino/setup-protoc@v2
+  uses: sergiocampama/setup-grpc-web@v1
   with:
     version: "23.x"
 ```
@@ -40,7 +43,7 @@ You can also require to include releases marked as `pre-release` in Github using
 
 ```yaml
 - name: Install Protoc
-  uses: arduino/setup-protoc@v2
+  uses: sergiocampama/setup-grpc-web@v1
   with:
     version: "23.x"
     include-pre-releases: true
@@ -50,7 +53,7 @@ To pin the exact version:
 
 ```yaml
 - name: Install Protoc
-  uses: arduino/setup-protoc@v2
+  uses: sergiocampama/setup-grpc-web@v1
   with:
     version: "23.2"
 ```
@@ -60,7 +63,7 @@ pass the default token with the `repo-token` variable:
 
 ```yaml
 - name: Install Protoc
-  uses: arduino/setup-protoc@v2
+  uses: sergiocampama/setup-grpc-web@v1
   with:
     repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -74,13 +77,13 @@ See [step-debug-logs](https://github.com/actions/toolkit/blob/master/docs/action
 ## Security
 
 If you think you found a vulnerability or other security-related bug in this project, please read our
-[security policy](https://github.com/arduino/setup-protoc/security/policy) and report the bug to our Security Team 🛡️
+[security policy](https://github.com/sergiocampama/setup-grpc-web/security/policy) and report the bug to our Security Team 🛡️
 Thank you!
 
 e-mail contact: security@arduino.cc
 
 ## Contributing
 
-To report bugs or make feature requests, please submit an issue: https://github.com/arduino/setup-protoc/issues
+To report bugs or make feature requests, please submit an issue: https://github.com/sergiocampama/setup-grpc-web/issues
 
 Pull requests are welcome! Please see the [contribution guidelines](.github/CONTRIBUTING.md) for information.
