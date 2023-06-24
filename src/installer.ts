@@ -298,6 +298,8 @@ async function computeVersion(
     .sort(semver.rcompare)
     .map((v) => versionMap.get(v));
 
+
+  core.debug("${allVersions}");
   core.debug(`evaluating ${versions.length} versions`);
 
   if (versions.length === 0) {
