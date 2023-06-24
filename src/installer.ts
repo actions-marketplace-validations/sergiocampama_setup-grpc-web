@@ -293,9 +293,15 @@ async function computeVersion(
     version = version.slice(0, version.length - 2);
   }
 
+  core.debug(`finding version ${version}`);
+
   const allVersions = await fetchVersions(url, includePreReleases, repoToken);
   const validVersions = allVersions.filter((v) => v.match(semverRegex));
   const possibleVersions = validVersions.filter((v) => v.startsWith(version));
+
+  core.debug(`${allVersions}`);
+  core.debug(`${validVersions}`);
+  core.debug(`${possibleVersions}`);
 
   const versionMap = new Map();
   possibleVersions.forEach((v) => versionMap.set(normalizeVersion(v), v));
@@ -304,8 +310,6 @@ async function computeVersion(
     .sort(semver.rcompare)
     .map((v) => versionMap.get(v));
 
-
-  core.debug("${allVersions}");
   core.debug(`evaluating ${versions.length} versions`);
 
   if (versions.length === 0) {
